@@ -1,0 +1,10 @@
+faiss-cpu
+sentence-transformers
+transformers
+streamlit
+numpy
+scikit-learn
+requests
+groq
+pdfplumber
+PyMuPDF
