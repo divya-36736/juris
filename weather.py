@@ -2,6 +2,7 @@ import os
 import json
 import faiss
 import numpy as np
+import requests
 from PyPDF2 import PdfReader
 from sentence_transformers import SentenceTransformer
 from groq import Groq
@@ -13,6 +14,22 @@ EMBED_MODEL = "all-MiniLM-L6-v2"
 GROQ_API_KEY = "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"
 LLAMA_MODEL = "llama3-70b-8192"
 TOP_K = 5
+
+# === Google Drive direct download links ===
+FAISS_URL = "https://drive.google.com/file/d/19NAfrrd6xsXukhepTunUkGe8oB1rWpJ6/view?usp=drivesdk "
+META_URL = "https://drive.google.com/file/d/19NAzfK2-CNMLDWFLRspzrcHm-uly4YB-/view?usp=drivesdk "
+
+def download_if_not_exists(url, path):
+    if not os.path.exists(path):
+        print(f"⬇️ Downloading {path}...")
+        r = requests.get(url)
+        with open(path, 'wb') as f:
+            f.write(r.content)
+        print(f"✅ Downloaded {path}")
+
+# === Download FAISS index and metadata if not present ===
+download_if_not_exists(FAISS_URL, FAISS_INDEX_PATH)
+download_if_not_exists(META_URL, METADATA_PATH)
 
 # === Load FAISS + Metadata ===
 print("🔁 Loading FAISS index and metadata...")
@@ -133,5 +150,6 @@ if __name__ == "__main__":
         print("\n🔎 FINAL LEGAL ADVICE (Reflected):\n")
         print(final_response)
         print("\n" + "=" * 100 + "\n")
+
 
 
