@@ -1,8 +1,8 @@
 import os
 import json
 import faiss
-import numpy as np
 import gdown
+import numpy as np
 from PyPDF2 import PdfReader
 from sentence_transformers import SentenceTransformer
 from groq import Groq
@@ -10,31 +10,51 @@ from groq import Groq
 # === CONFIG ===
 FAISS_INDEX_PATH = "faiss_legal.index"
 METADATA_PATH = "faiss_legal_metadata.json"
-EMBED_MODEL = "local_models/legal-embedding"
-EMBEDDING_MODEL_DRIVE_ID = "19TU9YXiYgHAWXbGnya8OSsqJ6x3VNsm0"
+EMBED_MODEL_PATH = "all-MiniLM-L6-v2"
 GROQ_API_KEY = "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"
 LLAMA_MODEL = "llama3-70b-8192"
 TOP_K = 5
 
-# === Download model if missing ===
-def download_model():
-    if not os.path.exists(EMBED_MODEL):
-        os.makedirs(EMBED_MODEL, exist_ok=True)
-        print("⬇️ Downloading embedding model from Google Drive...")
-        gdown.download_folder(f"https://drive.google.com/drive/folders/{EMBEDDING_MODEL_DRIVE_ID}", output=EMBED_MODEL, quiet=False, use_cookies=False)
-        print("✅ Download complete.")
+# === Drive URLs ===
+FAISS_DRIVE_URL = "https://drive.google.com/uc?id=19NAfrrd6xsXukhepTunUkGe8oB1rWpJ6"
+META_DRIVE_URL = "https://drive.google.com/uc?id=19NAzfK2-CNMLDWFLRspzrcHm-uly4YB-"
+EMBED_DRIVE_FOLDER = "https://drive.google.com/drive/folders/19TU9YXiYgHAWXbGnya8OSsqJ6x3VNsm0"
+
+# === Helper: Download from Drive if missing ===
+def ensure_files():
+    if not os.path.exists(FAISS_INDEX_PATH):
+        print("⬇️ Downloading FAISS index...")
+        gdown.download(FAISS_DRIVE_URL, FAISS_INDEX_PATH, quiet=False)
+
+    if not os.path.exists(METADATA_PATH):
+        print("⬇️ Downloading metadata...")
+        gdown.download(META_DRIVE_URL, METADATA_PATH, quiet=False)
+
+    model_files = [
+        os.path.join(EMBED_MODEL_PATH, "config.json"),
+        os.path.join(EMBED_MODEL_PATH, "pytorch_model.bin"),
+        os.path.join(EMBED_MODEL_PATH, "sentence_bert_config.json"),
+    ]
+    if not all(os.path.exists(f) for f in model_files):
+        print("⬇️ Embedding model not found. Please manually download from:")
+        print(f"👉 {EMBED_DRIVE_FOLDER}")
+        print(f"➡️ Unzip into folder: {EMBED_MODEL_PATH}")
+        raise SystemExit("❌ Cannot proceed without embedding model.")
+
+
+# === Prepare Files ===
+ensure_files()
 
 # === Load FAISS + Metadata ===
-print("🔁 Loading FAISS index and metadata...")
-download_model()
+print("📦 Loading FAISS index and metadata...")
 index = faiss.read_index(FAISS_INDEX_PATH)
 with open(METADATA_PATH, "r", encoding="utf-8") as f:
     metadata = json.load(f)
 
-embed_model = SentenceTransformer(EMBED_MODEL)
+embed_model = SentenceTransformer(EMBED_MODEL_PATH)
 client = Groq(api_key=GROQ_API_KEY)
 
-# === Functions ===
+# === Core Functions ===
 def search_faiss(query, top_k=TOP_K):
     embedding = embed_model.encode([query]).astype("float32")
     distances, indices = index.search(embedding, top_k)
@@ -114,7 +134,7 @@ def extract_text_from_pdf(pdf_path):
         print(f"❌ Failed to read PDF: {e}")
         return ""
 
-# === MAIN INTERFACE ===
+# === MAIN (For Local Testing) ===
 if __name__ == "__main__":
     print("\n⚖️ Legal Advisor (FAISS + CoT + Reflexion + Groq LLaMA)\n")
 
@@ -144,5 +164,6 @@ if __name__ == "__main__":
         print("\n🔎 FINAL LEGAL ADVICE (Reflected):\n")
         print(final_response)
         print("\n" + "=" * 100 + "\n")
+
 
 
