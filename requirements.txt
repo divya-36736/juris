@@ -9,3 +9,4 @@ groq
 pdfplumber
 PyMuPDF
 PyPDF2
+gdown
