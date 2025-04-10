@@ -12,7 +12,7 @@ import gdown
 # === CONFIG ===
 FAISS_INDEX_PATH = "faiss_legal.index"
 METADATA_PATH = "faiss_legal_metadata.json"
-EMBED_MODEL = "all-MiniLM-L6-v2"
+EMBED_MODEL = "embedding_model"
 GROQ_API_KEY = "your_groq_api_key_here"
 LLAMA_MODEL = "llama3-70b-8192"
 TOP_K = 5
@@ -38,7 +38,7 @@ index = faiss.read_index(FAISS_INDEX_PATH)
 with open(METADATA_PATH, "r", encoding="utf-8") as f:
     metadata = json.load(f)
 
-embed_model = SentenceTransformer(EMBED_MODEL)
+embed_model = SentenceTransformer()
 client = Groq(api_key=GROQ_API_KEY)
 
 # === Functions ===
@@ -152,4 +152,3 @@ if __name__ == "__main__":
         print(final_response)
         print("\n" + "=" * 100 + "\n")
 
- 
