@@ -2,43 +2,36 @@ import os
 import json
 import faiss
 import numpy as np
-import requests
+import gdown
 from PyPDF2 import PdfReader
 from sentence_transformers import SentenceTransformer
 from groq import Groq
-from urllib.parse import urlencode
-import gdown
 
 # === CONFIG ===
 FAISS_INDEX_PATH = "faiss_legal.index"
 METADATA_PATH = "faiss_legal_metadata.json"
-EMBED_MODEL = "embedding_model"
-GROQ_API_KEY = "your_groq_api_key_here"
+EMBED_MODEL = "local_models/legal-embedding"
+EMBEDDING_MODEL_DRIVE_ID = "19TU9YXiYgHAWXbGnya8OSsqJ6x3VNsm0"
+GROQ_API_KEY = "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"
 LLAMA_MODEL = "llama3-70b-8192"
 TOP_K = 5
 
-# Google Drive file IDs
-FAISS_DRIVE_ID = "19NAfrrd6xsXukhepTunUkGe8oB1rWpJ6"
-META_DRIVE_ID = "19NAzfK2-CNMLDWFLRspzrcHm-uly4YB-"
-
-# === Helper: download from Google Drive if needed ===
-def download_if_missing(file_path, file_id):
-    if not os.path.exists(file_path):
-        print(f"📥 Downloading {file_path} from Google Drive...")
-        url = f"https://drive.google.com/uc?id={file_id}"
-        gdown.download(url, file_path, quiet=False)
-
-# === Ensure files are present ===
-download_if_missing(FAISS_INDEX_PATH, FAISS_DRIVE_ID)
-download_if_missing(METADATA_PATH, META_DRIVE_ID)
+# === Download model if missing ===
+def download_model():
+    if not os.path.exists(EMBED_MODEL):
+        os.makedirs(EMBED_MODEL, exist_ok=True)
+        print("⬇️ Downloading embedding model from Google Drive...")
+        gdown.download_folder(f"https://drive.google.com/drive/folders/{EMBEDDING_MODEL_DRIVE_ID}", output=EMBED_MODEL, quiet=False, use_cookies=False)
+        print("✅ Download complete.")
 
 # === Load FAISS + Metadata ===
 print("🔁 Loading FAISS index and metadata...")
+download_model()
 index = faiss.read_index(FAISS_INDEX_PATH)
 with open(METADATA_PATH, "r", encoding="utf-8") as f:
     metadata = json.load(f)
 
-embed_model = SentenceTransformer()
+embed_model = SentenceTransformer(EMBED_MODEL)
 client = Groq(api_key=GROQ_API_KEY)
 
 # === Functions ===
@@ -151,4 +144,5 @@ if __name__ == "__main__":
         print("\n🔎 FINAL LEGAL ADVICE (Reflected):\n")
         print(final_response)
         print("\n" + "=" * 100 + "\n")
+
 
