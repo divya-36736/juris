@@ -6,30 +6,31 @@ import requests
 from PyPDF2 import PdfReader
 from sentence_transformers import SentenceTransformer
 from groq import Groq
+from urllib.parse import urlencode
+import gdown
 
 # === CONFIG ===
 FAISS_INDEX_PATH = "faiss_legal.index"
 METADATA_PATH = "faiss_legal_metadata.json"
 EMBED_MODEL = "all-MiniLM-L6-v2"
-GROQ_API_KEY = "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"
+GROQ_API_KEY = "your_groq_api_key_here"
 LLAMA_MODEL = "llama3-70b-8192"
 TOP_K = 5
 
-# === Google Drive direct download links ===
-FAISS_URL = "https://drive.google.com/file/d/19NAfrrd6xsXukhepTunUkGe8oB1rWpJ6/view?usp=drivesdk "
-META_URL = "https://drive.google.com/file/d/19NAzfK2-CNMLDWFLRspzrcHm-uly4YB-/view?usp=drivesdk "
+# Google Drive file IDs
+FAISS_DRIVE_ID = "19NAfrrd6xsXukhepTunUkGe8oB1rWpJ6"
+META_DRIVE_ID = "19NAzfK2-CNMLDWFLRspzrcHm-uly4YB-"
 
-def download_if_not_exists(url, path):
-    if not os.path.exists(path):
-        print(f"⬇️ Downloading {path}...")
-        r = requests.get(url)
-        with open(path, 'wb') as f:
-            f.write(r.content)
-        print(f"✅ Downloaded {path}")
+# === Helper: download from Google Drive if needed ===
+def download_if_missing(file_path, file_id):
+    if not os.path.exists(file_path):
+        print(f"📥 Downloading {file_path} from Google Drive...")
+        url = f"https://drive.google.com/uc?id={file_id}"
+        gdown.download(url, file_path, quiet=False)
 
-# === Download FAISS index and metadata if not present ===
-download_if_not_exists(FAISS_URL, FAISS_INDEX_PATH)
-download_if_not_exists(META_URL, METADATA_PATH)
+# === Ensure files are present ===
+download_if_missing(FAISS_INDEX_PATH, FAISS_DRIVE_ID)
+download_if_missing(METADATA_PATH, META_DRIVE_ID)
 
 # === Load FAISS + Metadata ===
 print("🔁 Loading FAISS index and metadata...")
@@ -151,5 +152,4 @@ if __name__ == "__main__":
         print(final_response)
         print("\n" + "=" * 100 + "\n")
 
-
-
+ 
